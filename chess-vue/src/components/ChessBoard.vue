@@ -34,60 +34,46 @@
 
 <script>
 import pieces from '../assets/pieces'
+import chessService from '../services/ChessService'
 
 export default {
   data() {
     return {
-      board: this.initBoard(),
+      chessService,
       dragging: null,
-      selected: null,
-      moves: []
+      selected: null
+    }
+  },
+  computed: {
+    board() {
+      return this.chessService.getBoard()
+    },
+    moves() {
+      return this.chessService.getMoves()
     }
   },
   methods: {
-    initBoard() {
-      const empty = Array(8).fill(null)
-      const board = []
-      board.push(['bR','bN','bB','bQ','bK','bB','bN','bR'])
-      board.push(Array(8).fill('bP'))
-      for (let i=0;i<4;i++) board.push([...empty])
-      board.push(Array(8).fill('wP'))
-      board.push(['wR','wN','wB','wQ','wK','wB','wN','wR'])
-      return board
+    isDarkSquare(r, c) {
+      return this.chessService.isDarkSquare(r, c)
     },
-    isDarkSquare(r,c){
-      return (r+c)%2===1
-    },
-    getPieceImage(code){
+    getPieceImage(code) {
       return pieces[code]
     },
-    isSelected(r,c){
-      return this.selected && this.selected.r===r && this.selected.c===c
+    isSelected(r, c) {
+      return this.selected && this.selected.r === r && this.selected.c === c
     },
-    coordToAlg(r,c){
-      const file = String.fromCharCode('a'.charCodeAt(0) + c)
-      const rank = 8 - r
-      return `${file}${rank}`
-    },
-    selectCell(r,c){
-      const cell = this.board[r][c]
+    selectCell(r, c) {
+      const cell = this.chessService.getPieceAt(r, c)
       if (!this.selected) {
         // pick up if there's a piece
         if (cell) this.selected = { r, c }
       } else {
         // move selected piece to this cell
-        const src = this.selected
-        if (!(src.r===r && src.c===c)) {
-          const piece = this.board[src.r][src.c]
-          this.board[src.r][src.c] = null
-          this.board[r][c] = piece
-          // record move
-          this.moves.push({ piece, from: { ...src }, to: { r, c } })
-        }
+        this.chessService.movePiece(this.selected, { r, c })
         this.selected = null
       }
     },
-    onDragStart(e,r,c){
+    onDragStart(e, r, c) {
       this.dragging = { r, c }
       try {
         e.dataTransfer.setData('text/plain', JSON.stringify({ r, c }))
@@ -95,7 +81,7 @@ export default {
         // ignore
       }
     },
-    onDrop(e, r, c){
+    onDrop(e, r, c) {
       let source = this.dragging
       if (!source) {
         try {
@@ -105,25 +91,16 @@ export default {
         }
       }
       if (!source) return
-      if (source.r===r && source.c===c) {
-        this.dragging = null
-        return
-      }
-      const piece = this.board[source.r][source.c]
-      this.board[source.r][source.c] = null
-      this.board[r][c] = piece
+      
+      this.chessService.movePiece(source, { r, c })
       this.dragging = null
       this.selected = null
-      // record move
-      this.moves.push({ piece, from: { r: source.r, c: source.c }, to: { r, c } })
     },
-    formatMove(m, idx){
-      const from = this.coordToAlg(m.from.r, m.from.c)
-      const to = this.coordToAlg(m.to.r, m.to.c)
-      return `${idx+1}. ${m.piece} ${from} → ${to}`
+    formatMove(m, idx) {
+      return this.chessService.formatMove(m, idx)
     },
-    clearHistory(){
-      this.moves = []
+    clearHistory() {
+      this.chessService.clearHistory()
     }
   }
 }
