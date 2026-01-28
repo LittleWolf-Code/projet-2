@@ -1,7 +1,7 @@
 pipeline {
     agent{ 
         docker{
-            image 'mcr.microsoft.com/playwright:v1.57.0-noble'
+            image 'mcr.microsoft.com/playwright:v1.58.0-noble'
             args '--network=host'
         }
     }
@@ -25,6 +25,7 @@ pipeline {
         stage('test UI'){
             steps{
                 sh 'echo test UI'
+                sh 'npx playwright install --with-deps'
                 sh 'npm run test:e2e'
             }
 
