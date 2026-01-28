@@ -25,7 +25,7 @@ pipeline {
         stage('test UI'){
             steps{
                 sh 'echo test UI'
-                sh 'npx playwright install --with-deps'
+                sh 'npx playwright install'
                 sh 'npm run test:e2e'
             }
 
