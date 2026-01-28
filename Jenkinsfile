@@ -1,9 +1,12 @@
 pipeline {
     agent any
     stages {
-        stage('step1') {
+        stage('build') {
             steps {
-                sh 'echo étape un'
+                sh 'echo debut etape build'
+                sh 'npm install'
+                sh 'npm run build'
+                sh 'echo fin etape build'
             }
         }
         stage('step2') {
