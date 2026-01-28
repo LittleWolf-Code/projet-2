@@ -17,6 +17,7 @@ pipeline {
         stage('test unitaire'){
             steps{
                 sh 'echo test unitaire'
+                sh 'npm install -D jsdom'
                 sh 'npm run test'
             }
             
