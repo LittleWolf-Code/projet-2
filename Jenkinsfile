@@ -57,6 +57,17 @@ pipeline {
                 }
             }
         }
+        stage('deploy') {
+            when { branch 'master' }  
+            environment {
+                NETLIFY_AUTH_TOKEN = credentials('NETLIFY_TOKEN')
+            }
+            steps {
+                sh 'npm install'
+                sh 'npm run build'
+                sh 'node_modules/netlify-cli/bin/run.js deploy --prod --site chessnotalreadyexists.netlify.app'
+            }
+        }
     }
 
 }
