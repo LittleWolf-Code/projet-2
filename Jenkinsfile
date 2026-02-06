@@ -18,6 +18,7 @@ pipeline {
             steps{
                 sh 'echo test unitaire'
                 sh 'npm install -D jsdom'
+                sh 'npm install -D @vitest/ui'
                 sh 'npm run test'
             }
             post {
