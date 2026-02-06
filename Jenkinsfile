@@ -35,9 +35,8 @@ pipeline {
                 }
             }
         }
-        }
         stage('test UI'){
-            steps{
+        steps{
                 sh 'echo test UI'
                 sh 'npx playwright install'
                 sh 'npm run test:e2e'
@@ -56,9 +55,7 @@ pipeline {
                     ])
                 }
             }
-
-
         }
-
     }
+
 }
