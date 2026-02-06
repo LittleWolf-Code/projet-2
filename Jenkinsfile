@@ -20,13 +20,41 @@ pipeline {
                 sh 'npm install -D jsdom'
                 sh 'npm run test'
             }
-            
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: false,
+                        keepAll: true,
+                        reportDir: 'html',
+                        reportFiles: 'index.html',
+                        reportName: 'VitestReport',
+                        reportTitles: '',
+                        useWrapperFileDirectly: true
+                    ])
+                }
+            }
+        }
         }
         stage('test UI'){
             steps{
                 sh 'echo test UI'
                 sh 'npx playwright install'
                 sh 'npm run test:e2e'
+            }
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: false,
+                        keepAll: true,
+                        reportDir: 'playwright-report',
+                        reportFiles: 'index.html',
+                        reportName: 'PlaywrightReport',
+                        reportTitles: '',
+                        useWrapperFileDirectly: true
+                    ])
+                }
             }
 
 
