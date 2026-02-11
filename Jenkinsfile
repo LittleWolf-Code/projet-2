@@ -87,7 +87,7 @@ pipeline {
             steps {
                 unstash 'workspace'
                 sh 'echo Déploiement sur Netlify'
-                sh 'npx netlify-cli deploy --prod --dir=dist --site=chessnotalreadyexists --auth=$NETLIFY_AUTH_TOKEN'
+                sh 'npx netlify-cli deploy --prod --dir=dist --site=chessnotalreadyexists.netlify.app --auth=$NETLIFY_AUTH_TOKEN'
             }
         }
         stage('docker') {
