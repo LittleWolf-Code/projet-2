@@ -97,7 +97,7 @@ pipeline {
 
                 CI_REGISTRY = 'ghcr.io'
 
-                CI_REGISTRY_USER = 'LittleWolf-Code'
+                CI_REGISTRY_USER = 'littlewolf-code'
                 CI_REGISTRY_IMAGE = "${CI_REGISTRY}/${CI_REGISTRY_USER}/projet-2"
                 CI_REGISTRY_PASSWORD = credentials('CI_REGISTRY_PASSWORD')
             }
