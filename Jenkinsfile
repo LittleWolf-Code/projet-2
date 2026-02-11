@@ -58,13 +58,12 @@ pipeline {
             }
         }
         stage('deploy') {
-            when { branch 'master' }  
+            when { branch 'main' }  
             environment {
                 NETLIFY_AUTH_TOKEN = credentials('NETLIFY_TOKEN')
             }
             steps {
-                sh 'npm install'
-                sh 'npm run build'
+                sh 'echo Déploiement sur Netlify'
                 sh 'node_modules/netlify-cli/bin/run.js deploy --prod --site chessnotalreadyexists.netlify.app'
             }
         }
