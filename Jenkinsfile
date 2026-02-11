@@ -64,7 +64,7 @@ pipeline {
             }
             steps {
                 sh 'echo Déploiement sur Netlify'
-                sh 'node_modules/netlify-cli/bin/run.js deploy --prod --site chessnotalreadyexists.netlify.app'
+                sh 'npx netlify-cli deploy --prod --dir=dist --site=chessnotalreadyexists --auth=$NETLIFY_AUTH_TOKEN'
             }
         }
     }
