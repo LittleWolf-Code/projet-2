@@ -60,9 +60,10 @@ describe('ChessService', () => {
   })
 
   describe('movePiece', () => {
-    it('should move a piece from source to destination', () => {
+    it('should move a piece from source to destination (legal move)', () => {
+      // e2 to e4 — legal white pawn double push
       const move = service.movePiece({ r: 6, c: 4 }, { r: 4, c: 4 })
-      
+
       expect(move).not.toBeNull()
       expect(move.piece).toBe('wP')
       expect(service.getPieceAt(6, 4)).toBeNull()
@@ -79,9 +80,23 @@ describe('ChessService', () => {
       expect(move).toBeNull()
     })
 
+    it('should return null for an illegal move', () => {
+      // Try to move pawn e2 to e5 (3 squares) — illegal
+      const move = service.movePiece({ r: 6, c: 4 }, { r: 3, c: 4 })
+      expect(move).toBeNull()
+      // Pawn should still be at e2
+      expect(service.getPieceAt(6, 4)).toBe('wP')
+    })
+
+    it('should enforce turn order', () => {
+      // Black tries to move first — illegal
+      const move = service.movePiece({ r: 1, c: 4 }, { r: 3, c: 4 })
+      expect(move).toBeNull()
+    })
+
     it('should record the move in history', () => {
       service.movePiece({ r: 6, c: 4 }, { r: 4, c: 4 })
-      
+
       const moves = service.getMoves()
       expect(moves.length).toBe(1)
       expect(moves[0].piece).toBe('wP')
@@ -89,14 +104,14 @@ describe('ChessService', () => {
       expect(moves[0].to).toEqual({ r: 4, c: 4 })
     })
 
-    it('should capture opponent piece', () => {
-      // Move white pawn
+    it('should allow capture with legal move', () => {
+      // 1. e4
       service.movePiece({ r: 6, c: 4 }, { r: 4, c: 4 })
-      // Move black pawn
+      // 1... d5
       service.movePiece({ r: 1, c: 3 }, { r: 3, c: 3 })
-      // Capture with white pawn
+      // 2. exd5 — legal capture
       service.movePiece({ r: 4, c: 4 }, { r: 3, c: 3 })
-      
+
       expect(service.getPieceAt(3, 3)).toBe('wP')
       expect(service.getPieceAt(4, 4)).toBeNull()
     })
@@ -133,7 +148,7 @@ describe('ChessService', () => {
         from: { r: 6, c: 4 },
         to: { r: 4, c: 4 }
       }
-      
+
       expect(service.formatMove(move, 0)).toBe('1. wP e2 → e4')
     })
 
@@ -143,7 +158,7 @@ describe('ChessService', () => {
         from: { r: 0, c: 1 },
         to: { r: 2, c: 2 }
       }
-      
+
       expect(service.formatMove(move, 4)).toBe('5. bN b8 → c6')
     })
   })
@@ -156,11 +171,11 @@ describe('ChessService', () => {
     it('should clear all moves from history', () => {
       service.movePiece({ r: 6, c: 4 }, { r: 4, c: 4 })
       service.movePiece({ r: 1, c: 4 }, { r: 3, c: 4 })
-      
+
       expect(service.getMoves().length).toBe(2)
-      
+
       service.clearHistory()
-      
+
       expect(service.getMoves()).toEqual([])
     })
   })
@@ -170,9 +185,9 @@ describe('ChessService', () => {
       // Make some moves
       service.movePiece({ r: 6, c: 4 }, { r: 4, c: 4 })
       service.movePiece({ r: 1, c: 4 }, { r: 3, c: 4 })
-      
+
       service.resetGame()
-      
+
       // Check board is reset
       expect(service.getPieceAt(6, 4)).toBe('wP')
       expect(service.getPieceAt(4, 4)).toBeNull()
@@ -182,10 +197,78 @@ describe('ChessService', () => {
 
     it('should clear the move history', () => {
       service.movePiece({ r: 6, c: 4 }, { r: 4, c: 4 })
-      
+
       service.resetGame()
-      
+
       expect(service.getMoves()).toEqual([])
+    })
+  })
+
+  describe('getCurrentTurn', () => {
+    it('should start with white turn', () => {
+      expect(service.getCurrentTurn()).toBe('w')
+    })
+
+    it('should alternate turns after a move', () => {
+      service.movePiece({ r: 6, c: 4 }, { r: 4, c: 4 })
+      expect(service.getCurrentTurn()).toBe('b')
+
+      service.movePiece({ r: 1, c: 4 }, { r: 3, c: 4 })
+      expect(service.getCurrentTurn()).toBe('w')
+    })
+  })
+
+  describe('getLegalMoves', () => {
+    it('should return legal moves for a white pawn at start', () => {
+      const moves = service.getLegalMoves(6, 4) // e2
+      expect(moves).toContain('e3')
+      expect(moves).toContain('e4')
+      expect(moves.length).toBe(2)
+    })
+
+    it('should return empty for an empty square', () => {
+      const moves = service.getLegalMoves(4, 4)
+      expect(moves).toEqual([])
+    })
+
+    it('should return legal moves for a knight', () => {
+      const moves = service.getLegalMoves(7, 1) // b1 knight
+      expect(moves).toContain('a3')
+      expect(moves).toContain('c3')
+      expect(moves.length).toBe(2)
+    })
+  })
+
+  describe('game state detection', () => {
+    it('should not be in check at start', () => {
+      expect(service.isCheck()).toBe(false)
+    })
+
+    it('should not be checkmate at start', () => {
+      expect(service.isCheckmate()).toBe(false)
+    })
+
+    it('should not be game over at start', () => {
+      expect(service.isGameOver()).toBe(false)
+    })
+
+    it('should detect checkmate (fool\'s mate)', () => {
+      // Fool's mate:  1. f3 e5  2. g4 Qh4#
+      service.movePiece({ r: 6, c: 5 }, { r: 5, c: 5 }) // f2-f3
+      service.movePiece({ r: 1, c: 4 }, { r: 3, c: 4 }) // e7-e5
+      service.movePiece({ r: 6, c: 6 }, { r: 4, c: 6 }) // g2-g4
+      service.movePiece({ r: 0, c: 3 }, { r: 4, c: 7 }) // Qd8-h4#
+
+      expect(service.isCheckmate()).toBe(true)
+      expect(service.isGameOver()).toBe(true)
+    })
+  })
+
+  describe('algToCoord', () => {
+    it('should convert algebraic notation to coordinates', () => {
+      expect(service.algToCoord('a8')).toEqual({ r: 0, c: 0 })
+      expect(service.algToCoord('e4')).toEqual({ r: 4, c: 4 })
+      expect(service.algToCoord('h1')).toEqual({ r: 7, c: 7 })
     })
   })
 })
