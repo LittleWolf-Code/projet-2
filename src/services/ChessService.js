@@ -1,68 +1,86 @@
 /**
  * ChessService - Service regroupant la logique métier du jeu d'échecs
+ * Utilise chess.js pour la validation des règles
  */
+import { Chess } from 'chess.js'
+
 export class ChessService {
   constructor() {
-    this.board = this.initBoard()
+    this.game = new Chess()
     this.moves = []
   }
 
   /**
-   * Initialise le plateau avec la position de départ
+   * Convertit une pièce chess.js en code interne (ex: {color:'w', type:'p'} → 'wP')
+   * @param {Object|null} piece - Pièce chess.js
+   * @returns {string|null}
+   */
+  _toCode(piece) {
+    if (!piece) return null
+    return piece.color + piece.type.toUpperCase()
+  }
+
+  /**
+   * Récupère le plateau au format interne (tableau 8x8 de codes 'wP','bK',… ou null)
    * @returns {Array} Le plateau 8x8
    */
-  initBoard() {
-    const empty = Array(8).fill(null)
-    const board = []
-    board.push(['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'])
-    board.push(Array(8).fill('bP'))
-    for (let i = 0; i < 4; i++) board.push([...empty])
-    board.push(Array(8).fill('wP'))
-    board.push(['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR'])
-    return board
-  }
-
-  /**
-   * Réinitialise le plateau et l'historique
-   */
-  resetGame() {
-    this.board = this.initBoard()
-    this.moves = []
+  getBoard() {
+    const chessBoard = this.game.board()
+    return chessBoard.map(row => row.map(cell => this._toCode(cell)))
   }
 
   /**
    * Récupère la pièce à une position donnée
-   * @param {number} r - Ligne
-   * @param {number} c - Colonne
+   * @param {number} r - Ligne (0=rangée 8, 7=rangée 1)
+   * @param {number} c - Colonne (0=a, 7=h)
    * @returns {string|null} Le code de la pièce ou null
    */
   getPieceAt(r, c) {
-    return this.board[r][c]
+    const square = this.coordToAlg(r, c)
+    const piece = this.game.get(square)
+    return this._toCode(piece)
   }
 
   /**
-   * Déplace une pièce d'une position à une autre
+   * Déplace une pièce d'une position à une autre (vérifie la légalité)
    * @param {Object} from - Position source {r, c}
    * @param {Object} to - Position destination {r, c}
-   * @returns {Object|null} Le mouvement effectué ou null si invalide
+   * @returns {Object|null} Le mouvement effectué ou null si illégal
    */
   movePiece(from, to) {
     if (from.r === to.r && from.c === to.c) {
       return null
     }
 
-    const piece = this.board[from.r][from.c]
+    const fromAlg = this.coordToAlg(from.r, from.c)
+    const toAlg = this.coordToAlg(to.r, to.c)
+    const piece = this.getPieceAt(from.r, from.c)
+
     if (!piece) {
       return null
     }
 
-    this.board[from.r][from.c] = null
-    this.board[to.r][to.c] = piece
+    try {
+      // Tenter le coup — chess.js lève une exception si illégal
+      // Toujours promouvoir en reine par défaut
+      const result = this.game.move({ from: fromAlg, to: toAlg, promotion: 'q' })
+      if (!result) return null
 
-    const move = { piece, from: { ...from }, to: { ...to } }
-    this.moves.push(move)
+      const move = { piece, from: { ...from }, to: { ...to } }
+      this.moves.push(move)
+      return move
+    } catch (e) {
+      // Coup illégal
+      return null
+    }
+  }
 
-    return move
+  /**
+   * Réinitialise le plateau et l'historique
+   */
+  resetGame() {
+    this.game.reset()
+    this.moves = []
   }
 
   /**
@@ -115,11 +133,74 @@ export class ChessService {
   }
 
   /**
-   * Récupère le plateau actuel
-   * @returns {Array} Le plateau 8x8
+   * Retourne le tour actuel ('w' ou 'b')
+   * @returns {string}
    */
-  getBoard() {
-    return this.board
+  getCurrentTurn() {
+    return this.game.turn()
+  }
+
+  /**
+   * Retourne true si le roi du joueur courant est en échec
+   * @returns {boolean}
+   */
+  isCheck() {
+    return this.game.isCheck()
+  }
+
+  /**
+   * Retourne true si c'est échec et mat
+   * @returns {boolean}
+   */
+  isCheckmate() {
+    return this.game.isCheckmate()
+  }
+
+  /**
+   * Retourne true si c'est pat (stalemate)
+   * @returns {boolean}
+   */
+  isStalemate() {
+    return this.game.isStalemate()
+  }
+
+  /**
+   * Retourne true si la partie est nulle
+   * @returns {boolean}
+   */
+  isDraw() {
+    return this.game.isDraw()
+  }
+
+  /**
+   * Retourne true si la partie est terminée
+   * @returns {boolean}
+   */
+  isGameOver() {
+    return this.game.isGameOver()
+  }
+
+  /**
+   * Retourne les cases légales pour une pièce donnée
+   * @param {number} r - Ligne
+   * @param {number} c - Colonne
+   * @returns {Array} Liste de cases en notation algébrique
+   */
+  getLegalMoves(r, c) {
+    const square = this.coordToAlg(r, c)
+    const moves = this.game.moves({ square, verbose: true })
+    return moves.map(m => m.to)
+  }
+
+  /**
+   * Convertit une notation algébrique en coordonnées {r, c}
+   * @param {string} alg - Notation algébrique (ex: "e4")
+   * @returns {Object} {r, c}
+   */
+  algToCoord(alg) {
+    const c = alg.charCodeAt(0) - 'a'.charCodeAt(0)
+    const r = 8 - parseInt(alg[1])
+    return { r, c }
   }
 }
 
