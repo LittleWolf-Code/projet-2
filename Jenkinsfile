@@ -63,14 +63,9 @@ pipeline {
                 NETLIFY_AUTH_TOKEN = credentials('NETLIFY_TOKEN')
             }
             steps {
-<<<<<<< HEAD
                 sh 'npm install'
                 sh 'npm run build'
                 sh 'node_modules/netlify-cli/bin/run.js deploy --prod --site chessnotalreadyexists.netlify.app'
-=======
-                sh 'echo Déploiement sur Netlify'
-                sh 'npx netlify-cli deploy --prod --dir=dist --site=$NETLIFY_SITE_ID'
->>>>>>> dev
             }
         }
     }
