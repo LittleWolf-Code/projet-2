@@ -68,20 +68,21 @@ pipeline {
             }
         }
         stage('docker') {
-        when { branch 'main' }
-        environment {
+            agent any
+            when { branch 'main' }
+            environment {
 
-            CI_REGISTRY = 'ghcr.io'
-            
-            CI_REGISTRY_USER = 'LittleWolf-Code' 
-            CI_REGISTRY_IMAGE = "${CI_REGISTRY}/${CI_REGISTRY_USER}/projet-2"
-            CI_REGISTRY_PASSWORD = credentials('CI_REGISTRY_PASSWORD')
-        }
-        steps {
-            sh 'docker build -t $CI_REGISTRY_IMAGE --network=host .'
-            sh 'docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY'
-            sh 'docker push $CI_REGISTRY_IMAGE'
-        }
+                CI_REGISTRY = 'ghcr.io'
+                
+                CI_REGISTRY_USER = 'LittleWolf-Code' 
+                CI_REGISTRY_IMAGE = "${CI_REGISTRY}/${CI_REGISTRY_USER}/projet-2"
+                CI_REGISTRY_PASSWORD = credentials('CI_REGISTRY_PASSWORD')
+            }
+            steps {
+                sh 'docker build -t $CI_REGISTRY_IMAGE --network=host .'
+                sh 'docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY'
+                sh 'docker push $CI_REGISTRY_IMAGE'
+            }
         }       
     }
 
